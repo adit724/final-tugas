@@ -1,0 +1,75 @@
+<div class="form-container">
+    <div class="form-card">
+        <h2 class="form-title">✏️ EDIT PROJECT</h2>
+        
+        <form action="/edit-project/{{project.id}}" method="POST" enctype="multipart/form-data" class="project-form">
+            <!-- Project Name -->
+            <div class="form-group">
+                <label for="projectName">
+                    <i class="fas fa-tag"></i> Project Name
+                </label>
+                <input type="text" id="projectName" name="projectName" value="{{project.name}}" required>
+            </div>
+            
+            <!-- Date Row -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">
+                        <i class="fas fa-calendar-alt"></i> Start Date
+                    </label>
+                    <input type="text" id="startDate" name="startDate" value="{{project.startDate}}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="endDate">
+                        <i class="fas fa-calendar-check"></i> End Date
+                    </label>
+                    <input type="text" id="endDate" name="endDate" value="{{project.endDate}}" required>
+                </div>
+            </div>
+            
+            <!-- Current Image Preview -->
+            <div class="form-group">
+                <label>Current Image</label>
+                <div class="current-image">
+                    <img src="/images/{{project.image}}" alt="{{project.name}}" width="100">
+                    <small>Gambar saat ini</small>
+                </div>
+            </div>
+            
+            <!-- New Image -->
+            <div class="form-group">
+                <label for="projectImage">
+                    <i class="fas fa-image"></i> Change Image (Optional)
+                </label>
+                <input type="file" id="projectImage" name="projectImage" accept="image/*">
+            </div>
+            
+            <!-- Technologies -->
+            <div class="form-group">
+                <label for="technologies">
+                    <i class="fas fa-code"></i> Technologies (pisahkan dengan koma)
+                </label>
+                <input type="text" id="technologies" name="technologies" value="{{project.technologies}}" placeholder="React, Node.js, Express, MongoDB">
+            </div>
+            
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">
+                    <i class="fas fa-align-left"></i> Description
+                </label>
+                <textarea id="description" name="description" rows="6" required>{{project.description}}</textarea>
+            </div>
+            
+            <!-- Buttons -->
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-save"></i> Update Project
+                </button>
+                <a href="/my-project" class="btn-cancel">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

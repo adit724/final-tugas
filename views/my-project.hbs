@@ -1,0 +1,114 @@
+<div class="form-container">
+    <div class="form-card">
+        <h2 class="form-title"> ADD MY PROJECT</h2>
+        
+        <form action="/add-project" method="POST" enctype="multipart/form-data" class="project-form">
+            <div class="form-group">
+                <label for="projectName">
+                    <i class="fas fa-tag"></i> Project Name
+                </label>
+                <input type="text" id="projectName" name="projectName" placeholder="e.g., Dumbways Mobile Apps" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="startDate">
+                        <i class="fas fa-calendar-alt"></i> Start Date
+                    </label>
+                    <input type="date" name="startDate" placeholder="mm / dd / yyyy" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="endDate">
+                        <i class="fas fa-calendar-check"></i> End Date
+                    </label>
+                    <input type="date" name="endDate" placeholder="mm / dd / yyyy" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="projectImage">
+                    <i class="fas fa-image"></i> Project Image
+                </label>
+                <div class="file-upload">
+                    <input type="file" id="projectImage" name="projectImage" accept="image/*">
+                    <small class="form-text">Format: JPG, PNG, GIF (Max 2MB)</small>
+                </div>
+            </div>
+
+            <div class="tech-checkbox-group">
+                <label><input type="checkbox" name="technologies" value="React"> React</label>
+                <label><input type="checkbox" name="technologies" value="Node.js"> Node.js</label>
+                <label><input type="checkbox" name="technologies" value="Express"> Express</label>
+            </div>
+
+            <div class="form-group">
+                <label for="description">
+                    <i class="fas fa-align-left"></i> Description
+                </label>
+                <textarea id="description" name="description" rows="6" placeholder="Deskripsikan project Anda secara lengkap..." required></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i> Kirim Project
+                </button>
+                <a href="/my-project" class="btn-cancel">
+                    <i class="fas fa-times"></i> Batal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+ <div class="projects-container">
+    <div class="projects-header">
+        <h2>MY PROJECTS</h2>
+    </div> 
+    
+   
+  {{#if searchValue}}
+    <div class="search-info">
+        <p>Hasil pencarian untuk: <strong>"{{searchValue}}"</strong></p>
+        <p>Ditemukan <strong>{{totalResults}}</strong> project</p>
+        <a href="/my-project"   class="clear-search"></a>
+    </div>
+    {{/if}}
+    
+    <div class="projects-grid">
+        {{#each projects}}
+        <div class="project-card">
+            <!-- 🔥 BUNGKUS CARD DENGAN LINK KE DETAIL -->
+            <a href="/my-project/{{this.id}}" class="project-link">
+                <div class="project-image">
+                    {{#if this.image}}
+                        <img src="/images/{{this.image}}" alt="{{this.name}}">
+                    {{else}}
+                        <div class="no-image-placeholder">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                    {{/if}}
+                </div>
+                
+                <h3 class="project-title">{{this.name}}</h3>
+                <div class="project-date">
+                    <span>📅 Start: {{this.startDate}}</span>
+                    <span>📄 End: {{this.endDate}}</span>
+                </div>
+                <p class="project-description">{{this.description}}</p>
+            </a>
+            
+            <div class="project-actions">
+                <button class="btn-edit">Edit</button>
+                <a href="/delete-project/{{this.id}}" class="btn-delete" onclick="return confirm('Yakin hapus project ini?')">Delete</a>
+            </div>
+        </div>
+        {{else}}
+        <div class="no-results">
+            <i class="fas fa-search"></i>
+            <h3>Tidak ada project yang ditemukan</h3>
+            <p>Coba dengan kata kunci lain atau <a href="/add-project">tambah project baru</a></p>
+        </div>
+        {{/each}}
+    </div>
+</div>

@@ -1,0 +1,53 @@
+<div class="detail-container">
+    <div class="detail-card">
+        <div class="detail-back">
+            <a href="/my-project" class="btn-back">
+                ← Back to My Projects
+            </a>
+        </div>
+        
+        <div class="detail-image">
+            {{#if project.image}}
+                <img src="/images/{{project.image}}" alt="{{project.name}}">
+            {{else}}
+                <div class="no-image-placeholder large">📁</div>
+            {{/if}}
+        </div>
+        
+        <div class="detail-info">
+            <h1 class="detail-title">{{project.name}}</h1>
+            
+            <div class="detail-meta">
+                <div class="meta-item">
+                    📅 Start: <strong>{{project.startDate}}</strong>
+                </div>
+                <div class="meta-item">
+                    📄 End: <strong>{{project.endDate}}</strong>
+                </div>
+            </div>
+            
+            <div class="detail-description">
+                <h3>Description</h3>
+                <p>{{project.description}}</p>
+            </div>
+            
+            <div class="detail-tech">
+                <h3>Technologies Used</h3>
+                <div class="tech-tags">
+                    {{#each project.technologies}}
+                        <span class="tech-tag">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            
+            <div class="detail-actions">
+                <a href="/edit-project/{{project.id}}" class="btn-edit-detail">
+                    ✏️ Edit Project
+                </a>
+                <a href="/delete-project/{{project.id}}" class="btn-delete-detail" onclick="return confirm('Yakin hapus?')">
+                    🗑️ Delete Project
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

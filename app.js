@@ -1,43 +1,32 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const express = require('express');
 const { engine } = require('express-handlebars');
 const path = require('path');
+const session = require('express-session');
+const flash = require('connect-flash');
+const methodOverride = require('method-override');
+const multer = require('multer');
+const db = require('./db'); 
+
 const app = express();
 const port = 3000;
-const multer = require('multer');
-const { title } = require('process');
 
-let projects = [
-    {
-        id: 1,
-        name: 'Dumbways Mobile Apps',
-        startDate: '01/15/2024',
-        endDate: '03/20/2024',
-        description: 'Membangun Aplikasi Sederhana untuk pembelajaran mobile development dengan React Native. Aplikasi ini mencakup fitur login, dashboard, dan manajemen pengguna',
-        image: 'luffy.jpg'
-    },
-    {
-        id: 2,
-        name: 'Dumbways Web Apps',
-        startDate: '06/01/2023',
-        endDate: '07/30/2023',
-        description: 'Membangun website modern dengan Express.js dan Handlebars. Website ini memiliki fitur CRUD, autentikasi user, dan dashboard admin',
-        image: 'luffy.jpg'
-    }
-];
-
-//  UPLOAD GAMBAR
+//  MULTER CONFIG (Upload Gambar) 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'public/images/');  
+        cb(null, 'public/images/');
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
-const upload = multer({ 
+
+const upload = multer({
     storage: storage,
-    limits: { fileSize: 2 * 1024 * 1024 }, 
+    limits: { fileSize: 2 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const allowedTypes = /jpeg|jpg|png|gif/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -50,225 +39,368 @@ const upload = multer({
     }
 });
 
-// Konfigurasi Handlebars
-app.engine('hbs', engine({ 
-    extname: '.hbs',
-    defaultLayout: 'layout',
-    layoutsDir: path.join(__dirname, 'views/layout'),
-    partialsDir: path.join(__dirname, 'views/partials')
-}));
-app.set('view engine', 'hbs');
-app.set('views', path.join(__dirname, 'views'));  
-
-//  MIDDLEWARE untuk membaca data dari form
+//  MIDDLEWARE 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use(methodOverride('_method'));
 
-// untuk otomatisasi NEW ID
-const generateNewId = () => {
-    return projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1;
+// Session & Flash Message
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'rahasia123',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 60000 }
+}));
+app.use(flash());
+
+// Flash message global variable
+app.use((req, res, next) => {
+    res.locals.success_msg = req.flash('success_msg');
+    res.locals.error_msg = req.flash('error_msg');
+    next();
+});
+
+//  HANDLEBARS SETUP 
+app.engine('hbs', engine({
+    extname: '.hbs',
+    defaultLayout: 'main',
+    layoutsDir: path.join(__dirname, 'views/layouts'),
+    partialsDir: path.join(__dirname, 'views/partials'),
+    helpers: {
+        eq: (a, b) => a === b,
+        includes: (arr, value) => arr && arr.includes(value),
+        formatDate: (date) => {
+            if (!date) return '';
+            const d = new Date(date);
+            return d.toLocaleDateString('id-ID');
+        }
+    }
+}));
+app.set('view engine', 'hbs');
+app.set('views', path.join(__dirname, 'views'));
+
+//  HELPER FUNCTIONS 
+const calculateDuration = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const months = Math.floor(diffDays / 30);
+    const days = diffDays % 30;
+
+    let duration = '';
+    if (months > 0) duration += `${months} bulan `;
+    if (days > 0) duration += `${days} hari`;
+    if (duration === '') duration = '0 hari';
+    return duration;
 };
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
+//  ROUTES 
 
-// Route Home
-app.get('/home', (req, res) => {
+// HOME
+app.get('/', (req, res) => {
     res.render('home', {
-        title: 'Home | MyProfile',
-        image: 'luffy.jpg',
+        title: 'Home | Personal Web',
         name: 'Aditya Afianto',
         role: 'Web Developer',
+        image: 'luffy.jpg',
         email: 'aditya@email.com',
         phone: '083877139627',
         address: 'Jakarta',
-        description: 'Lulusan Teknik Komputer Jaringan dengan pengalaman 2 tahun sebagai IT Support. Terbiasa menangani troubleshooting jaringan dan perangkat keras, backup data, serta instalasi software. Menguasai PHP dasar, HTML, dan pembuatan website sederhana. Siap bekerja dalam tim maupun individu dengan kemampuan problem solving yang baik.'
+        description: 'Lulusan Teknik Komputer Jaringan dengan pengalaman 2 tahun sebagai IT Support. Terbiasa menangani troubleshooting jaringan dan perangkat keras, backup data, serta instalasi software.'
     });
 });
 
+// CONTACT
 app.get('/contact', (req, res) => {
-    res.render('about', {
-        title: 'Contact | MyProfile',
+    res.render('contact', {
+        title: 'Contact | Personal Web',
         email: 'aditya@email.com',
         phone: '083877139627',
         address: 'Jakarta'
     });
 });
 
-// untuk Read data
-app.get('/my-project', (req, res) => {
-    const { search = '' } = req.query; 
-    
-    // ARRAY METHOD: filter
-    const filteredProjects = search 
-        ? projects.filter(project => 
-            project.name.toLowerCase().includes(search.toLowerCase())
-          )
-        : projects;
-    
-    res.render('my-project', {
-        title: 'My Projects | MyProfile',
-        projects: filteredProjects,
-        searchValue: search,
-        totalResults: filteredProjects.length
-    });
-});
+//  PROJECTS ROUTES (CRUD with pg-promise) 
 
+// READ ALL (My Projects with Search)
+app.get('/my-project', async (req, res) => {
+    const { search = '' } = req.query;
 
-// ROUTE PROSES ADD PROJECT DENGAN UPLOAD GAMBAR
-app.post('/add-project', upload.single('projectImage'), (req, res) => {
-    const { projectName, startDate, endDate, description, technologies } = req.body;
-    const techArray = technologies
-        ? techArray.split(',').map(tech => tech.trim())
-        : ['JavaScript', 'Node.js', 'Express'];
-    
-    const newProject = {
-        id: generateNewId,
-        name: projectName,
-        startDate: startDate,
-        endDate: endDate,
-        description: description,
-        technologies: techArray,
-        image: req.file ? req.file.filename : 'default-project.png'  
-    };
-    
-    projects.push(newProject);
-    res.redirect('/my-project');
-});
+    try {
+        const query = `
+            SELECT 
+                p.id,
+                p.name,
+                p.start_date,
+                p.end_date,
+                p.description,
+                p.image,
+                string_agg(t.name, ', ') AS technologies
+            FROM projects p
+            LEFT JOIN project_technologies pt ON p.id = pt.project_id
+            LEFT JOIN technologies t ON pt.technology_id = t.id
+            WHERE p.name ILIKE $1
+            GROUP BY p.id, p.name, p.start_date, p.end_date, p.description, p.image
+            ORDER BY p.id DESC
+        `;
 
-app.get('/delete-project/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    projects = projects.filter(project => project.id !== id);
-    res.redirect('/my-project');
-});
+        // pg-promise: langsung dapet array, gak perlu .rows
+        const projects = await db.any(query, [`%${search}%`]);
 
-app.get('/my-project/:id', (req, res) => {
-    const { id } = req.params; 
-    const projectId = parseInt(id);
-    
-    
-    const project = projects.find(p => p.id === projectId);
-    
-    if (!project) {
-        return res.status(404).render('404', {
-            title: 'Project Not Found',
-            message: 'Project yang Anda cari tidak ditemukan'
+        // Hitung durasi untuk setiap project
+        const projectsWithDuration = projects.map(project => ({
+            ...project,
+            duration: calculateDuration(project.start_date, project.end_date)
+        }));
+
+        res.render('my-project', {
+            title: 'My Projects | Personal Web',
+            projects: projectsWithDuration,
+            searchValue: search,
+            totalResults: projectsWithDuration.length
         });
+    } catch (err) {
+        console.error('Error fetching projects:', err);
+        req.flash('error_msg', 'Gagal mengambil data project');
+        res.redirect('/my-project');
     }
-    
-    res.render('detail',{
-        title: `${project.name} | Detail Project`,
-        project
-    });
-});
-//  ROUTE DELETE PROJECT
-app.get('/delete-project/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    projects = projects.filter(project => project.id !== id);
-    res.redirect('/my-project');
 });
 
-app.get('/my-project', (req, res) => {
-    // Data dummy projects
-    const projects = [
-        {
-            id: 1,
-            name: 'E-Commerce Website',
-            startDate: '01/15/2024',
-            endDate: '03/20/2024',
-            description: 'Membangun website e-commerce untuk UMKM lokal dengan fitur keranjang belanja dan payment gateway.'
-        },
-        {
-            id: 2,
-            name: 'Company Profile',
-            startDate: '06/01/2023',
-            endDate: '07/30/2023',
-            description: 'Membuat company profile responsive untuk perusahaan konsultan IT.'
-        },
-        {
-            id: 3,
-            name: 'Inventory System',
-            startDate: '09/10/2023',
-            endDate: '12/15/2023',
-            description: 'Sistem manajemen inventaris berbasis web untuk gudang penyimpanan.'
+// CREATE (Add Project Form)
+app.get('/add-project', async (req, res) => {
+    try {
+        // pg-promise: ambil semua technologies
+        const technologies = await db.any('SELECT id, name FROM technologies ORDER BY name');
+        
+        res.render('add-project', {
+            title: 'Add Project | Personal Web',
+            technologies: technologies
+        });
+    } catch (err) {
+        console.error('Error fetching technologies:', err);
+        req.flash('error_msg', 'Gagal memuat form tambah project');
+        res.redirect('/my-project');
+    }
+});
+
+// CREATE (Add Project Process)
+app.post('/add-project', upload.single('projectImage'), async (req, res) => {
+    const { name, start_date, end_date, description, technologies } = req.body;
+
+    let techArray = [];
+    if (technologies) {
+        techArray = Array.isArray(technologies) ? technologies : [technologies];
+    }
+
+    const image = req.file ? req.file.filename : 'default.jpg';
+
+    try {
+        // pg-promise: insert dan return id langsung
+        const newProject = await db.one(
+            `INSERT INTO projects (name, start_date, end_date, description, image, author_id) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id`,
+            [name, start_date, end_date, description, image, 1]
+        );
+
+        const projectId = newProject.id;
+
+        // Insert relasi project_technologies
+        for (const techId of techArray) {
+            await db.none(
+                'INSERT INTO project_technologies (project_id, technology_id) VALUES ($1, $2)',
+                [projectId, techId]
+            );
         }
-    ];
-    
-    res.render('my-project', {
-        title: 'My Projects | MyProfile',
-        projects: projects
-    });
+
+        req.flash('success_msg', 'Project berhasil ditambahkan!');
+        res.redirect('/my-project');
+    } catch (err) {
+        console.error('Error adding project:', err);
+        req.flash('error_msg', 'Gagal menambahkan project');
+        res.redirect('/add-project');
+    }
 });
 
-// untuk update dari FORM
-app.get('/edit-project/:id', (req, res) => {
-    const { id } = req.params; 
-    const projectId = parseInt(id);
-    
-   
-    const project = projects.find(p => p.id === projectId);
-    
-    if (!project) {
-        return res.status(404).render('404', {
-            title: 'Project Not Found',
-            message: 'Project yang ingin diedit tidak ditemukan'
+// READ DETAIL (View Project)
+app.get('/my-project/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // pg-promise: oneOrNone untuk data yang mungkin kosong
+        const project = await db.oneOrNone(
+            `SELECT 
+                p.*,
+                u.name AS author_name
+             FROM projects p
+             LEFT JOIN users u ON p.author_id = u.id
+             WHERE p.id = $1`,
+            [id]
+        );
+
+        if (!project) {
+            req.flash('error_msg', 'Project tidak ditemukan');
+            return res.redirect('/my-project');
+        }
+
+        // Ambil technologies untuk project ini
+        const technologies = await db.any(
+            `SELECT t.id, t.name 
+             FROM technologies t
+             JOIN project_technologies pt ON t.id = pt.technology_id
+             WHERE pt.project_id = $1`,
+            [id]
+        );
+
+        project.technologies = technologies;
+        project.duration = calculateDuration(project.start_date, project.end_date);
+
+        res.render('detail', {
+            title: `${project.name} | Detail Project`,
+            project
+        });
+    } catch (err) {
+        console.error('Error fetching project detail:', err);
+        req.flash('error_msg', 'Gagal mengambil detail project');
+        res.redirect('/my-project');
+    }
+});
+
+// UPDATE (Edit Project Form)
+app.get('/edit-project/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // pg-promise: ambil project
+        const project = await db.oneOrNone('SELECT * FROM projects WHERE id = $1', [id]);
+
+        if (!project) {
+            req.flash('error_msg', 'Project tidak ditemukan');
+            return res.redirect('/my-project');
+        }
+
+        // Ambil technologies yang sudah dipilih
+        const selectedTechsResult = await db.any(
+            'SELECT technology_id FROM project_technologies WHERE project_id = $1',
+            [id]
+        );
+        const selectedTechs = selectedTechsResult.map(row => row.technology_id);
+
+        // Ambil semua technologies
+        const allTechnologies = await db.any('SELECT id, name FROM technologies ORDER BY name');
+
+        res.render('edit-project', {
+            title: 'Edit Project | Personal Web',
+            project,
+            technologies: allTechnologies,
+            selectedTechs
+        });
+    } catch (err) {
+        console.error('Error fetching edit form:', err);
+        req.flash('error_msg', 'Gagal memuat form edit project');
+        res.redirect('/my-project');
+    }
+});
+
+// UPDATE (Edit Project Process)
+app.put('/edit-project/:id', upload.single('projectImage'), async (req, res) => {
+    const { id } = req.params;
+    const { name, start_date, end_date, description, technologies } = req.body;
+
+    let techArray = [];
+    if (technologies) {
+        techArray = Array.isArray(technologies) ? technologies : [technologies];
+    }
+
+    try {
+        // Cek apakah project ada
+        const projectExists = await db.oneOrNone('SELECT id FROM projects WHERE id = $1', [id]);
+        if (!projectExists) {
+            req.flash('error_msg', 'Project tidak ditemukan');
+            return res.redirect('/my-project');
+        }
+
+        // Update project
+        await db.none(
+            `UPDATE projects 
+             SET name = $1, start_date = $2, end_date = $3, description = $4
+             WHERE id = $5`,
+            [name, start_date, end_date, description, id]
+        );
+
+        // Hapus relasi technologies lama
+        await db.none('DELETE FROM project_technologies WHERE project_id = $1', [id]);
+
+        // Insert relasi technologies baru
+        for (const techId of techArray) {
+            await db.none(
+                'INSERT INTO project_technologies (project_id, technology_id) VALUES ($1, $2)',
+                [id, techId]
+            );
+        }
+
+        req.flash('success_msg', 'Project berhasil diupdate!');
+        res.redirect('/my-project');
+    } catch (err) {
+        console.error('Error updating project:', err);
+        req.flash('error_msg', 'Gagal mengupdate project');
+        res.redirect(`/edit-project/${id}`);
+    }
+});
+
+// DELETE (Delete Project)
+app.delete('/delete-project/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Cek apakah project ada
+        const projectExists = await db.oneOrNone('SELECT id FROM projects WHERE id = $1', [id]);
+        
+        if (!projectExists) {
+            req.flash('error_msg', 'Project tidak ditemukan');
+            return res.redirect('/my-project');
+        }
+
+        // Delete project (cascade akan menghapus relasi otomatis)
+        await db.none('DELETE FROM projects WHERE id = $1', [id]);
+
+        req.flash('success_msg', 'Project berhasil dihapus!');
+        res.redirect('/my-project');
+    } catch (err) {
+        console.error('Error deleting project:', err);
+        req.flash('error_msg', 'Gagal menghapus project');
+        res.redirect('/my-project');
+    }
+});
+
+//  TEST DATABASE ROUTE 
+app.get('/test-db', async (req, res) => {
+    try {
+        const result = await db.one('SELECT NOW() as time, current_database() as db_name');
+        res.json({
+            status: 'success',
+            message: 'Database connected with pg-promise!',
+            data: {
+                server_time: result.time,
+                database_name: result.db_name
+            }
+        });
+    } catch (err) {
+        res.status(500).json({
+            status: 'error',
+            message: err.message
         });
     }
-    
-    res.render('edit-project', {
-        title: `Edit ${project.name} | MyProfile`,
-        project
-    });
 });
 
-app.post('/edit-project/:id', upload.single('projectImage'), (req, res) => {
-    const { id } = req.params; 
-    const projectId = parseInt(id);
-    const { projectName, startDate, endDate, description, technologies } = req.body;
-    
-    
-    const projectIndex = projects.findIndex(p => p.id === projectId);
-    
-    if (projectIndex === -1) {
-        return res.status(404).send('Project not found');
-    }
-    
-    const techArray = technologies 
-        ? technologies.split(',').map(tech => tech.trim())
-        : projects[projectIndex].technologies;
-    
-    projects[projectIndex] = {
-        ...projects[projectIndex], 
-        name: projectName,
-        startDate: startDate,
-        endDate: endDate,
-        description: description,
-        technologies: techArray,
-        image: req.file ? req.file.filename : projects[projectIndex].image
-    };
-    
-    res.redirect('/my-project');
-});
-
-app.get('/delete-project/:id', (req, res) => {
-    const { id } = req.params; 
-    const projectId = parseInt(id);
-    
-    const projectExists = projects.find(p => p.id === projectId);
-    
-    if (!projectExists) {
-        return res.status(404).send('Project not found');
-    }
-    
-    projects = projects.filter(p => p.id !== projectId);
-    res.redirect('/my-project');
-});
-
-// Start server
+//  START SERVER 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-    console.log(`- Home: http://localhost:${port}/`);
-    console.log(`- Contact: http://localhost:${port}/contact`);
-    console.log(`- My Projects: http://localhost:${port}/my-project`);
+    console.log(`\n Server running at http://localhost:${port}`);
+    console.log(` Home: http://localhost:${port}/`);
+    console.log(` My Projects: http://localhost:${port}/my-project`);
+    console.log(` Add Project: http://localhost:${port}/add-project`);
+    console.log(` Contact: http://localhost:${port}/contact`);
+    console.log(`\n Using pg-promise for database operations\n`);
 });

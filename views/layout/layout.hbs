@@ -6,17 +6,45 @@
     <title>{{title}}</title>
     <link rel="stylesheet" href="/css/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">   
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">   
 </head>
 <body>
     {{> navbar}}
     
     <main class="container">
+         {{#if success_msg}}
+            <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                {{success_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{/if}}
+        
+        {{#if error_msg}}
+            <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                {{error_msg}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{/if}}
         {{{body}}}
     </main>
     
     <footer>
         <p></p>
     </footer>
+
+     <script>
+        // Auto close alert setelah 3 detik
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.style.transition = 'opacity 0.5s';
+                alert.style.opacity = '0';
+                setTimeout(function() {
+                    alert.remove();
+                }, 500);
+            });
+        }, 3000);
+    </script>
 </body>
 </html>

@@ -1,0 +1,78 @@
+<div class="landing-container">
+    <div class="landing-header">
+        <h1 class="landing-title">Personal Web Portfolio</h1>
+        <p class="landing-subtitle">Silakan login atau register untuk melanjutkan</p>
+    </div>
+
+    <div class="landing-row">
+        <!-- FORM LOGIN -->
+        <div class="landing-col">
+            <div class="custom-card">
+                <div class="custom-card-header bg-primary">
+                    <h4 class="card-title">Login</h4>
+                </div>
+                <div class="custom-card-body">
+                    {{#if errors.login}}
+                        <div class="custom-alert custom-alert-danger">
+                            {{errors.login}}
+                        </div>
+                    {{/if}}
+
+                    <form action="/login" method="POST">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{oldInput.email}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="custom-btn custom-btn-primary w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORM REGISTER -->
+        <div class="landing-col">
+            <div class="custom-card">
+                <div class="custom-card-header bg-success">
+                    <h4 class="card-title">Register</h4>
+                </div>
+                <div class="custom-card-body">
+                    {{#if errors.register}}
+                        <div class="custom-alert custom-alert-danger">
+                            {{#each errors.register}}
+                                <div>{{this}}</div>
+                            {{/each}}
+                        </div>
+                    {{/if}}
+
+                    <form action="/register" method="POST">
+                        <div class="form-group">
+                            <label for="reg_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="reg_name" name="name" 
+                                   value="{{oldInput.name}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="reg_email" name="email" 
+                                   value="{{oldInput.reg_email}}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reg_password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="reg_password" name="password" required>
+                            <small class="form-text text-muted">Minimal 6 karakter</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="custom-btn custom-btn-success w-100">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

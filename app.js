@@ -110,9 +110,11 @@ const calculateDuration = (startDate, endDate) => {
 
 // LANDING PAGE
 app.get('/', (req, res) => {
+    // Jika sudah login, redirect ke home
     if (req.session.user) {
         return res.redirect('/home');
     }
+    
     res.render('landing', {
         title: 'Welcome | Personal Web',
         errors: null,
@@ -190,6 +192,8 @@ app.post('/login', async (req, res) => {
         console.log('Session user set to:', req.session.user);
         console.log('Session ID:', req.session.id);
 
+
+        req.flash('success_msg', 'Selamat datang kembali, ' + user.name);
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error:', err);
@@ -202,7 +206,6 @@ app.post('/login', async (req, res) => {
             }
             
             console.log('Session saved successfully!');
-            req.flash('success_msg', 'Selamat datang kembali, ' + user.name);
             
             res.redirect('/home');
         });

@@ -12,6 +12,13 @@
                     <h4 class="card-title">Login</h4>
                 </div>
                 <div class="custom-card-body">
+                    {{#if success_msg}}
+                        <div class="custom-alert custom-alert-success">{{success_msg}}</div>
+                    {{/if}}
+                    {{#if error_msg}}
+                        <div class="custom-alert custom-alert-danger">{{errors.login}}</div>
+                    {{/if}}
+
                     {{#if errors.login}}
                         <div class="custom-alert custom-alert-danger">
                             {{errors.login}}
